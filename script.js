@@ -1,4 +1,6 @@
 
+// To-Do : negativ numbers (+- -> - ...), kerekítés, foolproof, keyboard-support
+
 let actualNumber = "";
 let prevOperations = [];
 let hanginAfterCalculation = false;
@@ -17,21 +19,21 @@ function addToScreen(number) {
 // When an operations is pressed I put the number-string thing + the operator in the prevScreen, az reset the current screen & stirng
 
 function addToPrevScreen(operand) {
-    prevOperations.push(actualNumber, operand);
+    prevOperations.push(Number(actualNumber), operand);
     prevOperand.innerHTML = prevOperations.join(" ");
 
     actualNumber = "";
     currentOperand.innerHTML = actualNumber;
 }
 
-// can't call it delete or del
+// remove the last number
 
 function remove() {
     actualNumber = actualNumber.slice(0, -1);
     currentOperand.innerHTML = actualNumber;
 }
 
-// can't name it clear :( )
+// self-explanatory
 
 function clearAll() {
     actualNumber = "";
@@ -39,6 +41,8 @@ function clearAll() {
     currentOperand.innerHTML = "";
     prevOperand.innerHTML = "";
 }
+
+// the maths
 
 function add(number1, number2) {
     return +number1 + +number2;
@@ -52,6 +56,8 @@ function multiply(number1, number2) {
     return +number1 * +number2;
 }
 
+// dividing with 0 is a no-no
+
 function divide(number1, number2) {
     if (number2 == 0) {
         return "Error";
@@ -59,6 +65,8 @@ function divide(number1, number2) {
     }
     return +number1 / +number2;
 }
+
+// Call this function to get part-results (see the calculate function)
 
 function operate(operator, number1, number2) {
     return (operator === "+") ? add(number1, number2)
@@ -68,45 +76,45 @@ function operate(operator, number1, number2) {
     : "Unexpected Error";
 }
 
+// This function is called when pressing '='
 
 function calculate() {
-    prevOperations.push(actualNumber);
+    prevOperations.push(Number(actualNumber)); // push the last number into the array, so we can work with it
 
-
+    let i = 0, temp = 0;
+    // First we do the '*' and '/' operations. WE go through the whole array. if the array length is 1, ther is no other operations.
+    // IF we reached the end , get out the loop and do the least powerful operations. 
+    while (prevOperations.length != 1) { 
+        if (prevOperations[i] == "*" || prevOperations[i] == "/") {
+            temp = operate(prevOperations[i], prevOperations[i-1], prevOperations[i+1])
+            prevOperations.splice(i-1, 3, temp);
+            i--;
+            continue;
+        }
+        i++;
+        if (i == prevOperations.length) break;
+    }
+    i = 0; // reset the index-variable
+    while (prevOperations.length != 1) {
+        if (prevOperations[i] == "+" || prevOperations[i] == "-") {
+            temp = operate(prevOperations[i], prevOperations[i-1], prevOperations[i+1])
+            prevOperations.splice(i-1, 3, temp);
+            i--;
+            continue;
+        }
+        i++;
+    }
     
-    actualNumber = operate(prevOperations[1], prevOperations[0], prevOperations[2]);
-
-
+    // The result is the only element of the prev... array. Only the result is shown, delete the history.
+    actualNumber = prevOperations[0];
 
     prevOperations = [];
     currentOperand.innerHTML = actualNumber;
     prevOperand.innerHTML = prevOperations;
-    hanginAfterCalculation = true;
+    hanginAfterCalculation = true; // This is needed for further using, see addToScreen function to see why.
 }
 
-function calculate2() {
-    let temp = 0;
-    prevOperations.push(actualNumber);
-    let length = prevOperations.length;
-   // console.log(prevOperations); prevOperations array looks like this: [num, op, num, op, ... ,num]
-   for (let i = 0; i < length; i++) {
-       if (prevOperations[i] === "*" || prevOperations[i] === "/") {
-            temp = operate(prevOperations[i], prevOperations[i-1], prevOperations[i+1]);
-            prevOperations.slice(i-1, 3, temp);
-            length -= 2;
-            
-       }
-   }
-  for (let i = 0; i < prevOperations.length; i++) {
-        if (prevOperations[i] == "+" || prevOperations[i] == "-") {
-         temp = operate(prevOperations[i], prevOperations[i-1], prevOperations[i+1]);
-         prevOperations.slice(i-1, 3, temp);
-         i--;
-        }
-    }
-    actualNumber = prevOperations[0];
-    currentOperand.innerHTML = actualNumber;
-}
+// Get the variables
 
 const numbers = document.querySelectorAll("[data-number]");
 const operations = document.querySelectorAll("[data-operation]");
@@ -115,6 +123,8 @@ const clear = document.querySelector("[data-clear]");
 const del = document.querySelector("[data-delete]");
 const currentOperand = document.querySelector("[data-current-operand]");
 const prevOperand = document.querySelector("[data-prev-operand]");
+
+// Get the inputs
 
 numbers.forEach(button => {
     button.addEventListener("click", () => {
