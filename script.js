@@ -1,9 +1,10 @@
 
-// To-Do : negativ numbers (+- -> - ...), kerekítés, foolproof, keyboard-support
+// To-Do : keyboard-support
 
 let actualNumber = "";
 let prevOperations = [];
 let hanginAfterCalculation = false;
+let negativFlag = "";
 
 // When numbers are pressed I put them in a string
 
@@ -12,13 +13,23 @@ function addToScreen(number) {
         actualNumber = "";
         hanginAfterCalculation = false;
     }
+    if (number == "." && actualNumber.indexOf(number) != -1) return;
     actualNumber += number.toString();
-    currentOperand.innerHTML = actualNumber;
+    currentOperand.innerHTML = negativFlag + actualNumber;
 }
 
 // When an operations is pressed I put the number-string thing + the operator in the prevScreen, az reset the current screen & stirng
 
 function addToPrevScreen(operand) {
+    // if the last input was an operand and the current is too, dont allow it, except for negativ numbers
+    if (typeof prevOperations[prevOperations.length - 1] === "string" && actualNumber === "") { 
+        if (operand === "-") { // In this case the user wants neg. number
+            actualNumber = "-";
+            currentOperand.innerHTML = actualNumber;
+            return;
+        }
+        return;
+    }
     prevOperations.push(Number(actualNumber), operand);
     prevOperand.innerHTML = prevOperations.join(" ");
 
@@ -29,6 +40,13 @@ function addToPrevScreen(operand) {
 // remove the last number
 
 function remove() {
+    if (typeof prevOperations[prevOperations.length - 1] === "string" && actualNumber === "") { // If we want to delete an operate
+        prevOperations.pop(); // pop that
+        actualNumber = prevOperations.pop(); // pop the last number and put that on the screen
+        currentOperand.innerHTML = actualNumber;
+        prevOperand.innerHTML = prevOperations.join(" "); // update the scrrens
+        return;
+    }
     actualNumber = actualNumber.slice(0, -1);
     currentOperand.innerHTML = actualNumber;
 }
@@ -79,7 +97,9 @@ function operate(operator, number1, number2) {
 // This function is called when pressing '='
 
 function calculate() {
+    if(prevOperations.length < 2) return; // Not enough inputs yet
     prevOperations.push(Number(actualNumber)); // push the last number into the array, so we can work with it
+
 
     let i = 0, temp = 0;
     // First we do the '*' and '/' operations. WE go through the whole array. if the array length is 1, ther is no other operations.
@@ -106,11 +126,11 @@ function calculate() {
     }
     
     // The result is the only element of the prev... array. Only the result is shown, delete the history.
-    actualNumber = prevOperations[0];
+    actualNumber = parseFloat(prevOperations[0].toFixed(8)); // rounding, (toFixed is converting to string that's why i use parseFloat too)
 
     prevOperations = [];
-    currentOperand.innerHTML = actualNumber;
-    prevOperand.innerHTML = prevOperations;
+    currentOperand.innerHTML = actualNumber; // result
+    prevOperand.innerHTML = prevOperations; // cleared
     hanginAfterCalculation = true; // This is needed for further using, see addToScreen function to see why.
 }
 
@@ -149,4 +169,32 @@ clear.addEventListener("click", button => {
 equals.addEventListener("click", button => {
     if (actualNumber.length == 0 || prevOperations.length == 0) return;
     calculate();
+});
+
+const numberKeys = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ","];
+const opKeys = ["+", "-", "*", "/"];
+
+document.addEventListener("keydown", (event) => {
+    if (numberKeys.includes(event.key)) {
+        if (event.key === ",") {
+            addToScreen(".");
+            return;
+        }
+        addToScreen(event.key);
+        return;
+    }
+    if (opKeys.includes(event.key)) {
+        addToPrevScreen(event.key);
+        return;
+    }
+    if (event.key === "Backspace") {
+        remove();
+    }
+    if (event.key === "c") {
+        clearAll();
+    }
+    if (event.key === "Enter") {
+        if (actualNumber.length == 0 || prevOperations.length == 0) return;
+        calculate();
+    }
 });
